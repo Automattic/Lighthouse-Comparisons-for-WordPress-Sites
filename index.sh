@@ -19,9 +19,10 @@ read -r chromeDebugPort
 views=("index.php" "edit-comments.php" "upload.php" "edit.php" "plugins.php")
 
 
-jqKeys="[.requestedUrl, .fetchTime, .firstContentfulPaint, .firstMeaningfulPaint, .largestContentfulPaint, .interactive, .speedIndex, .totalBlockingTime, .maxPotentialFID, .cumulativeLayoutShift, .cumulativeLayoutShiftMainFrame, .totalCumulativeLayoutShift, .serverResponseTime]"
+jqKeys='[".requestedUrl",".fetchTime", ".firstContentfulPaint", ".firstMeaningfulPaint", ".largestContentfulPaint", ".interactive", ".speedIndex", ".totalBlockingTime", ".maxPotentialFID", ".cumulativeLayoutShift", ".cumulativeLayoutShiftMainFrame", ".totalCumulativeLayoutShift", ".serverResponseTime"]'
+echo "$jqKeys" | jq '@csv' --raw-output
 
-# TODO: echo keys as header
+jqKeysProcessed="${jqKeys//\"/}"
 
 for outerIndex in "${!views[@]}";
 do
@@ -37,6 +38,6 @@ do
 		--only-categories=performance \
 		--output=json | \
 			jq '{requestedUrl,fetchTime} * .audits.metrics.details.items[0] * {serverResponseTime: .audits["server-response-time"].numericValue}' | \
-			jq "$jqKeys | @csv"
+			jq "$jqKeysProcessed | @csv" --raw-output
 	done
 done
