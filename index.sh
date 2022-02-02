@@ -7,6 +7,10 @@ command -v chrome-debug >/dev/null 2>&1 || { echo >&2 "chrome-debug is not insta
 echo "What is the base URL of the site that you want to test?"
 read -r baseUrlInput
 
+echo ""
+echo "What is the slug for the condition that you're testing?"
+read -r conditionSlug
+
 baseUrl=${baseUrlInput%/} # Remove trailing slash from argument
 adminUrl="$baseUrl/wp-admin/"
 
@@ -19,7 +23,7 @@ read -r chromeDebugPort
 views=("index.php" "edit-comments.php" "upload.php" "edit.php" "plugins.php")
 
 
-jqKeys='[".requestedUrl",".fetchTime", ".firstContentfulPaint", ".firstMeaningfulPaint", ".largestContentfulPaint", ".interactive", ".speedIndex", ".totalBlockingTime", ".maxPotentialFID", ".cumulativeLayoutShift", ".cumulativeLayoutShiftMainFrame", ".totalCumulativeLayoutShift", ".serverResponseTime"]'
+jqKeys='[".condition,.requestedUrl",".fetchTime", ".firstContentfulPaint", ".firstMeaningfulPaint", ".largestContentfulPaint", ".interactive", ".speedIndex", ".totalBlockingTime", ".maxPotentialFID", ".cumulativeLayoutShift", ".cumulativeLayoutShiftMainFrame", ".totalCumulativeLayoutShift", ".serverResponseTime"]'
 echo "$jqKeys" | jq '@csv' --raw-output
 
 jqKeysProcessed="${jqKeys//\"/}"
@@ -37,7 +41,7 @@ do
 		--port="$chromeDebugPort" \
 		--only-categories=performance \
 		--output=json | \
-			jq '{requestedUrl,fetchTime} * .audits.metrics.details.items[0] * {serverResponseTime: .audits["server-response-time"].numericValue}' | \
+			jq "{ condition: \"$conditionSlug\" } * {requestedUrl,fetchTime} * .audits.metrics.details.items[0] * {serverResponseTime: .audits[\"server-response-time\"].numericValue}" | \
 			jq "$jqKeysProcessed | @csv" --raw-output
 	done
 done
