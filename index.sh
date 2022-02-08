@@ -12,8 +12,22 @@ for i in "$@"; do
 			PASSES="${i#*=}"
 			shift
 			;;
+		--output_location=* )
+			output_location="${i/\~/$HOME}"
+			output_location="${output_location#*=}"
+			shift
+			;;
 	esac
 done
+
+do_output() {
+	local output
+	output=$(cat)
+	echo "$output"
+	if [ -n "$output_location" ]; then
+		echo "$output" >> "$output_location/$conditionSlug.csv"
+	fi
+}
 
 echo "What is the base URL of the site that you want to test?"
 read -r baseUrlInput
@@ -33,9 +47,8 @@ read -r chromeDebugPort
 
 views=("index.php" "edit-comments.php" "upload.php" "edit.php" "plugins.php")
 
-
 jqKeys='[".condition,.requestedUrl",".fetchTime", ".firstContentfulPaint", ".firstMeaningfulPaint", ".largestContentfulPaint", ".interactive", ".speedIndex", ".totalBlockingTime", ".maxPotentialFID", ".cumulativeLayoutShift", ".cumulativeLayoutShiftMainFrame", ".totalCumulativeLayoutShift", ".serverResponseTime"]'
-echo "$jqKeys" | jq '@csv' --raw-output
+echo "$jqKeys" | jq '@csv' --raw-output | do_output
 
 jqKeysProcessed="${jqKeys//\"/}"
 
@@ -46,12 +59,12 @@ do
 
 	for ((innerLoop=1; innerLoop<=PASSES; innerLoop++)); do
 		lighthouse "$fullUrl" \
-		--quiet \
-		--disable-storage-reset \
-		--port="$chromeDebugPort" \
-		--only-categories=performance \
-		--output=json | \
-			jq "{ condition: \"$conditionSlug\" } * {requestedUrl,fetchTime} * .audits.metrics.details.items[0] * {serverResponseTime: .audits[\"server-response-time\"].numericValue}" | \
-			jq "$jqKeysProcessed | @csv" --raw-output
+			--quiet \
+			--disable-storage-reset \
+			--port="$chromeDebugPort" \
+			--only-categories=performance \
+			--output=json | \
+				jq "{ condition: \"$conditionSlug\" } * {requestedUrl,fetchTime} * .audits.metrics.details.items[0] * {serverResponseTime: .audits[\"server-response-time\"].numericValue}" | \
+				jq "$jqKeysProcessed | @csv" --raw-output | do_output
 	done
 done
