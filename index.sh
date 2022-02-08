@@ -4,6 +4,10 @@ command -v jq >/dev/null 2>&1 || { echo >&2 "jq is not installed. Aborting."; ex
 command -v lighthouse >/dev/null 2>&1 || { echo >&2 "lighthouse is not installed. Aborting."; exit 1; }
 command -v chrome-debug >/dev/null 2>&1 || { echo >&2 "chrome-debug is not installed. Aborting."; exit 1; }
 
+usage() {
+	echo "Usage: index.sh --base_url=base_url --chrome_debug_port=chrome_debug_port [--passes=passes] [--condition_slug=condition_slug] [--output_location=output_location]"
+}
+
 passes="5"
 
 for i in "$@"; do
@@ -12,13 +16,45 @@ for i in "$@"; do
 			passes="${i#*=}"
 			shift
 			;;
-		--output_location=* )
-			output_location="${i/\~/$HOME}"
-			output_location="${output_location#*=}"
+		--base_url=* )
+			base_url="${i#*=}"
+			base_url=${base_url%/} # Remove trailing slash
 			shift
 			;;
+		--condition_slug=* )
+			condition_slug="${i#*=}"
+			shift
+			;;
+		--chrome_debug_port=* )
+			chrome_debug_port="${i#*=}"
+			shift
+			;;
+		--output_location=* )
+			output_location="${i/\~/$HOME}" # Expand tilde
+			output_location="${output_location#*=}"
+			output_location="${output_location%/}" # Remove trailing slash
+			shift
+			;;
+		* )
+			usage >&2
+			exit 1
 	esac
 done
+
+if [ -z "$base_url" ] || [ -z "$chrome_debug_port" ]; then
+	usage
+	exit 1
+fi
+
+admin_url="$base_url/wp-admin/"
+
+if [ -z "$passes" ]; then
+	passes="5"
+fi
+
+if [ -z "$condition_slug" ]; then
+	condition_slug="$(date +%s)"
+fi
 
 do_output() {
 	local output
@@ -28,22 +64,6 @@ do_output() {
 		echo "$output" >> "$output_location/$condition_slug.csv"
 	fi
 }
-
-echo "What is the base URL of the site that you want to test?"
-read -r base_url_input
-
-echo ""
-echo "What is the slug for the condition that you're testing?"
-read -r condition_slug
-
-base_url=${base_url_input%/} # Remove trailing slash from argument
-admin_url="$base_url/wp-admin/"
-
-echo ""
-echo "In a separate terminal window run chrome-debug and then log in to your site at $admin_url"
-echo ""
-echo "What is the Chrome debugging port?"
-read -r chrome_debug_port
 
 views=("index.php" "edit-comments.php" "upload.php" "edit.php" "plugins.php")
 
