@@ -4,6 +4,17 @@ command -v jq >/dev/null 2>&1 || { echo >&2 "jq is not installed. Aborting."; ex
 command -v lighthouse >/dev/null 2>&1 || { echo >&2 "lighthouse is not installed. Aborting."; exit 1; }
 command -v chrome-debug >/dev/null 2>&1 || { echo >&2 "chrome-debug is not installed. Aborting."; exit 1; }
 
+PASSES="5"
+
+for i in "$@"; do
+	case $i in
+		--passes=* )
+			PASSES="${i#*=}"
+			shift
+			;;
+	esac
+done
+
 echo "What is the base URL of the site that you want to test?"
 read -r baseUrlInput
 
@@ -33,8 +44,7 @@ do
 	view="${views[$outerIndex]}"
 	fullUrl="${adminUrl}${view}"
 
-	for innerIndex in {1..5};
-	do
+	for ((innerLoop=1; innerLoop<=PASSES; innerLoop++)); do
 		lighthouse "$fullUrl" \
 		--quiet \
 		--disable-storage-reset \
