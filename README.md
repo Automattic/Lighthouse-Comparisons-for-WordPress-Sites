@@ -2,7 +2,7 @@
 
 After a report from a user that installing a WordPress plugin adds seconds of load time to their wp-admin, [@dereksmart](https://github.com/dereksmart) and I wanted a way to compare before and after performance metrics for that site.
 
-Because we would be testing a unique set of circumstances on this user's site and because we were more interested in the performance deltas a short window of time, rather than performance metrics over time, it seemed reasonable to just run many Lighthouse tests and then export the data to CSV for analyzing in Google Sheets. We did the first pass of this manually.
+Because we would be testing a unique set of circumstances on this user's site and because we were more interested in the performance deltas over a short window of time, rather than performance metrics over time, it seemed reasonable to just run many Lighthouse tests and then export the data to CSV for analyzing in Google Sheets. We did the first pass of this manually.
 
 Afterwards, I worked on this script to make future testing much simpler.
 
