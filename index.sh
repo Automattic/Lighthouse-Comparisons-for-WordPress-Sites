@@ -67,7 +67,7 @@ do_output() {
 
 views=("index.php" "edit-comments.php" "upload.php" "edit.php" "plugins.php")
 
-jqKeys='[".condition,.requestedUrl",".fetchTime", ".firstContentfulPaint", ".firstMeaningfulPaint", ".largestContentfulPaint", ".interactive", ".speedIndex", ".totalBlockingTime", ".maxPotentialFID", ".cumulativeLayoutShift", ".cumulativeLayoutShiftMainFrame", ".totalCumulativeLayoutShift", ".serverResponseTime"]'
+jqKeys='[".condition",".requestedUrl",".fetchTime", ".firstContentfulPaint", ".firstMeaningfulPaint", ".largestContentfulPaint", ".interactive", ".speedIndex", ".totalBlockingTime", ".maxPotentialFID", ".cumulativeLayoutShift", ".cumulativeLayoutShiftMainFrame", ".totalCumulativeLayoutShift", ".serverResponseTime"]'
 echo "$jqKeys" | jq '@csv' --raw-output | do_output
 
 jq_keys_processed="${jqKeys//\"/}"
