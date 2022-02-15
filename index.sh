@@ -5,7 +5,7 @@ command -v lighthouse >/dev/null 2>&1 || { echo >&2 "lighthouse is not installed
 command -v chrome-debug >/dev/null 2>&1 || { echo >&2 "chrome-debug is not installed. Aborting."; exit 1; }
 
 usage() {
-	echo "Usage: index.sh --base_url=base_url --chrome_debug_port=chrome_debug_port [--passes=passes] [--condition_slug=condition_slug] [--output_location=output_location] [--remove_csv_header]"
+	echo "Usage: index.sh --base_url=base_url --chrome_debug_port=chrome_debug_port [--passes=passes] [--condition_slug=condition_slug] [--output_location=output_location] [--remove_csv_header] [--add_uniqueness_to_url]"
 }
 
 passes="5"
@@ -37,6 +37,10 @@ for i in "$@"; do
 			;;
 		--remove_csv_header )
 			remove_csv_header="1"
+			shift
+			;;
+		--add_uniqueness_to_url )
+			add_uniqueness_to_url="1"
 			shift
 			;;
 		* )
@@ -71,28 +75,35 @@ do_output() {
 
 views=("index.php" "edit-comments.php" "upload.php" "edit.php" "plugins.php")
 
-jqKeys='[".condition",".requestedUrl",".fetchTime", ".firstContentfulPaint", ".firstMeaningfulPaint", ".largestContentfulPaint", ".interactive", ".speedIndex", ".totalBlockingTime", ".maxPotentialFID", ".cumulativeLayoutShift", ".cumulativeLayoutShiftMainFrame", ".totalCumulativeLayoutShift", ".serverResponseTime"]'
+jqKeys='[".condition",".view",".requestedUrl",".fetchTime", ".firstContentfulPaint", ".firstMeaningfulPaint", ".largestContentfulPaint", ".interactive", ".speedIndex", ".totalBlockingTime", ".maxPotentialFID", ".cumulativeLayoutShift", ".cumulativeLayoutShiftMainFrame", ".totalCumulativeLayoutShift", ".serverResponseTime"]'
 
 if [ -z "$remove_csv_header" ]; then
 	echo "$jqKeys" | jq '@csv' --raw-output | do_output
 fi
-
 
 jq_keys_processed="${jqKeys//\"/}"
 
 for outer_index in "${!views[@]}";
 do
 	view="${views[$outer_index]}"
-	fullUrl="${admin_url}${view}"
+	view_url="${admin_url}${view}"
 
 	for ((inner_index=1; inner_index<=passes; inner_index++)); do
-		lighthouse "$fullUrl" \
+		if [ -n "$add_uniqueness_to_url" ];
+			then
+				unique_time=$(date +%s);
+				query_url="$view_url?lh_for_wp_uniq=$unique_time"
+			else
+				query_url="$view_url"
+		fi
+
+		lighthouse "$query_url" \
 			--quiet \
 			--disable-storage-reset \
 			--port="$chrome_debug_port" \
 			--only-categories=performance \
 			--output=json | \
-				jq "{ condition: \"$condition_slug\" } * {requestedUrl,fetchTime} * .audits.metrics.details.items[0] * {serverResponseTime: .audits[\"server-response-time\"].numericValue}" | \
+				jq "{ condition: \"$condition_slug\", view:\"$view\" } * {requestedUrl,fetchTime} * .audits.metrics.details.items[0] * {serverResponseTime: .audits[\"server-response-time\"].numericValue}" | \
 				jq "$jq_keys_processed | @csv" --raw-output | do_output
 	done
 done
