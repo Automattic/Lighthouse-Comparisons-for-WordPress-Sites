@@ -5,7 +5,7 @@ command -v lighthouse >/dev/null 2>&1 || { echo >&2 "lighthouse is not installed
 command -v chrome-debug >/dev/null 2>&1 || { echo >&2 "chrome-debug is not installed. Aborting."; exit 1; }
 
 usage() {
-	echo "Usage: index.sh --base_url=base_url --chrome_debug_port=chrome_debug_port [--passes=passes] [--condition_slug=condition_slug] [--output_location=output_location]"
+	echo "Usage: index.sh --base_url=base_url --chrome_debug_port=chrome_debug_port [--passes=passes] [--condition_slug=condition_slug] [--output_location=output_location] [--remove_csv_header]"
 }
 
 passes="5"
@@ -33,6 +33,10 @@ for i in "$@"; do
 			output_location="${i/\~/$HOME}" # Expand tilde
 			output_location="${output_location#*=}"
 			output_location="${output_location%/}" # Remove trailing slash
+			shift
+			;;
+		--remove_csv_header )
+			remove_csv_header="1"
 			shift
 			;;
 		* )
@@ -68,7 +72,11 @@ do_output() {
 views=("index.php" "edit-comments.php" "upload.php" "edit.php" "plugins.php")
 
 jqKeys='[".condition",".requestedUrl",".fetchTime", ".firstContentfulPaint", ".firstMeaningfulPaint", ".largestContentfulPaint", ".interactive", ".speedIndex", ".totalBlockingTime", ".maxPotentialFID", ".cumulativeLayoutShift", ".cumulativeLayoutShiftMainFrame", ".totalCumulativeLayoutShift", ".serverResponseTime"]'
-echo "$jqKeys" | jq '@csv' --raw-output | do_output
+
+if [ -z "$remove_csv_header" ]; then
+	echo "$jqKeys" | jq '@csv' --raw-output | do_output
+fi
+
 
 jq_keys_processed="${jqKeys//\"/}"
 

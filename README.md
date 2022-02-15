@@ -28,3 +28,4 @@ This script expects that you have the following installed:
     - `passes`: How many times should a Lighthouse test be run for each URL? Default is 5.
     - `condition_slug`: This is used to build the filename and also in the resulting CSV output for analyzing later. Defaults to the timestamp when the script was started.
     - `output_location`: When set, will output a CSV file to this directory with a filename of `condition_slug.csv`.
+    - `remove_csv_header`: When present, will prevent the CSV header being printed. This is useful for later concatenating multiple runs.
